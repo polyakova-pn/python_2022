@@ -1,0 +1,1 @@
+[[2 for i in range(min(j, m))] + [0] * (j < m) + [1 for i in range(j, m - 1)] for j in range(n)]

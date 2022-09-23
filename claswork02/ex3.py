@@ -1,0 +1,1 @@
+[[j for i in range(j + 1)] + [i for i in range(j + 1, n)] for j in range(n)]
