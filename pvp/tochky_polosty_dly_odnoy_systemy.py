@@ -73,13 +73,14 @@ def is_in_lobe(point, pole):
 '''
 
 def grav_potencial(point_m_vec, m):
-    '''считает грав потенциал от массы m в точке, заданной вектором point '''
+    '''считает грав потенциал от массы m в точке, вектор из которой в массу m - point_m_vec'''
     G = 6.67 * 10 ** (-11)
     pot = -1 * G * m / (np.dot(point_m_vec, point_m_vec)) ** 0.5
     return pot
 
 
 def centr_potetial(point, T, a, m1, m2):
+    '''считает центробежный потенциал от массы m в точке, радиус вектор которой - point'''
     omega = 2 * np.pi / T
     A_sht_vec = np.array([a * m2 / (m1 + m2), 0, 0])
     vec = point * np.array([1, 1, 0]) - A_sht_vec
@@ -88,6 +89,7 @@ def centr_potetial(point, T, a, m1, m2):
 
 
 def total_potential(point, m1, m2, a):
+    '''считает суммарный потенциал в точке point'''
     G = 6.67 * 10 ** (-11)
     a = a * 150000000000
     m1 = m1 * 2 * 10 ** 30
@@ -100,6 +102,7 @@ def total_potential(point, m1, m2, a):
 
 
 def pole_(limit, step, m1, m2, a):
+    '''создает поле (трехмерный массив из потенциалов размером 2а * 2а вокруг звезды с размером ячейки, приближающей точку step)'''
     pole_ = []
     diapozon = np.arange(-limit, limit, step)
     for x in diapozon:
@@ -134,6 +137,7 @@ def solving_x5(a0, a1, a2, a3, a4, a5, a):
 '''
 
 def solving_x3(b1, b2, b3, a):
+    ''' решает уравнение для нахождения расстояния до точки лагранжа L1(бин поиск)'''
     beg = 0
     end = a
     '''
@@ -159,6 +163,7 @@ def solving_x3(b1, b2, b3, a):
 
 
 def L1_potential(m1, m2, a):
+    ''' считает потенциал точки L1 и возвращает расстоние до нее'''
     G = 6.67 * 10 ** (-11)
     omega = 2 * np.pi / (a ** 3 / (m1 + m2)) ** 0.5
     av = a * 150000000000
@@ -194,6 +199,7 @@ def L1_potential(m1, m2, a):
 
 
 def is_lobe(point, pole, LP1, tochnost):
+    ''' проверяет, является ли точка point границей полости(сравнивая с потенциалом L1), учитывая точность определения границы полости и шаг отрисовки'''
     x = point[0]
     y = point[1]
     z = point[2]
@@ -208,6 +214,7 @@ def is_lobe(point, pole, LP1, tochnost):
 
 
 def lobe(m1, m2, a, limit, step):
+    ''' создает пространство точек со значением 1, если они часть полости и 0 если нет, создает масивы xg, yg, xg с координатами точек полости'''
     xg = []
     yg = []
     zg = []
@@ -239,7 +246,7 @@ def lobe(m1, m2, a, limit, step):
 
 
 m1 = 1
-m2 = 5
+m2 = 100
 a = 1
 
 n = m1 / m2
@@ -249,6 +256,8 @@ step = 0.05
 lobe, xg, yg, zg, l1_ = lobe(m1, m2, float(a), limit, step)
 #print()
 c = 0
+
+''' рисуем модель полости по полученным данным'''
 
 fig = plt.figure(figsize=(5, 5))
 ax_3d = Axes3D(fig)
