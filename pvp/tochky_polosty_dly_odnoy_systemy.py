@@ -113,7 +113,8 @@ def pole_(limit, step, m1, m2, a):
             iy = int(y / step + limit / step)
             for z in diapozon:
                 iz = z / step + limit / step
-                pole_[ix][iy].append(total_potential(np.array([x, y, z]), m1, m2, a))
+                const = 150000000000
+                pole_[ix][iy].append(total_potential(const * np.array([x, y, z]), m1, m2, a))
     #print(pole_[20][20][39])
     return pole_
 
@@ -182,7 +183,25 @@ def L1_potential(m1, m2, a):
     a5 = omega ** 2
     # solving_x3(b1, b2, b3, a)
     l = solving_x3(b1, b2, b3, av) / 150000000000
+
+    G = 6.67 * 10 ** (-11)
+    a = a * 150000000000
+    m1 = m1 * 2 * 10 ** 30
+    m2 = m2 * 2 * 10 ** 30
+    # T = 2 * np.pi * (a ** 3/ G / (m1 + m2)) ** 0.5
+    T = 2 * np.pi * (a ** 3 / (m1 + m2) / G) ** 0.5
+
     pot = total_potential(np.array([l, 0, 0]), m1, m2, a)
+
+    point = np.array([l, 0, 0]) * 150000000000
+    g1 = grav_potencial(point, m1)
+    g2 = grav_potencial(point - np.array([a, 0, 0]), m2)
+    cpot = centr_potetial(point, T, a, m1, m2)
+    #print()
+    #print(g1, g2, cpot)
+    #print()
+    pot = grav_potencial(point, m1) + grav_potencial(point - np.array([a, 0, 0]), m2) + centr_potetial(point, T, a, m1,
+                                                                                                       m2)
     '''
     T = (a ** 3 / (m1 + m2)) ** 0.5
     point = np.array([l, 0, 0])
@@ -207,13 +226,27 @@ def is_lobe(point, pole, LP1, tochnost):
     iy = int(y / step + limit / step)
     iz = int(z / step + limit / step)
     P = pole[ix][iy][iz]
+    if pole[ix][iy][iz] < LP1 + tochnost:
+        return 1
+    else:
+        return 0
+
+def is_lobe_for_model(point, pole, LP1, tochnost):
+    ''' проверяет, является ли точка point границей полости(сравнивая с потенциалом L1), учитывая точность определения границы полости и шаг отрисовки'''
+    x = point[0]
+    y = point[1]
+    z = point[2]
+    ix = int(x / step + limit / step)
+    iy = int(y / step + limit / step)
+    iz = int(z / step + limit / step)
+    P = pole[ix][iy][iz]
     if pole[ix][iy][iz] < LP1 + tochnost and pole[ix][iy][iz] > LP1 - tochnost:
         return 1
     else:
         return 0
 
 
-def lobe(m1, m2, a, limit, step):
+def lobe_(m1, m2, a, limit, step):
     ''' создает пространство точек со значением 1, если они часть полости и 0 если нет, создает масивы xg, yg, xg с координатами точек полости'''
     xg = []
     yg = []
@@ -222,7 +255,8 @@ def lobe(m1, m2, a, limit, step):
     space = []
     lp1, l1 = L1_potential(m1, m2, a)
     l1_ = l1 + a / limit * step
-    tochnost = abs(total_potential(np.array([l1_, 0, 0]), m1, m2, a) - lp1) * 3 ** 0.5
+    c = 150000000000
+    tochnost = abs(total_potential(c * np.array([l1_, 0, 0]), m1, m2, a) - lp1) * 3 ** 0.5
     #print(tochnost)
     diapozon = np.arange(-limit, limit, step)
     for x in diapozon:
@@ -234,7 +268,7 @@ def lobe(m1, m2, a, limit, step):
             for z in diapozon:
                 iz = int(z / step + limit / step)
                 param = is_lobe(np.array([x, y, z]), pole, lp1, tochnost)
-                if param == 1:
+                if param == 1 and ix > limit // step / 3 and ix < (l1 + limit) / step:
                     xg.append(x)
                     yg.append(y)
                     zg.append(z)
@@ -245,33 +279,116 @@ def lobe(m1, m2, a, limit, step):
     return space, xg, yg, zg, l1_
 
 
-m1 = 1
-m2 = 100
+def lobe_for_model(m1, m2, a, limit, step):
+    ''' создает пространство точек со значением 1, если они часть полости и 0 если нет, создает масивы xg, yg, xg с координатами точек полости'''
+    xg = []
+    yg = []
+    zg = []
+    pole = pole_(limit, step, m1, m2, a)
+    space = []
+    lp1, l1 = L1_potential(m1, m2, a)
+    l1_ = l1 + a / limit * step
+    c = 150000000000
+    tochnost = abs(total_potential(c * np.array([l1_, 0, 0]), m1, m2, a) - lp1) * 3 ** 0.5
+    #print(tochnost)
+    diapozon = np.arange(-limit, limit, step)
+    for x in diapozon:
+        space.append([])
+        ix = int(x / step + limit / step)
+        for y in diapozon:
+            space[ix].append([])
+            iy = int(y / step + limit / step)
+            for z in diapozon:
+                iz = int(z / step + limit / step)
+                param = is_lobe_for_model(np.array([x, y, z]), pole, lp1, tochnost)
+                if param == 1 and ix > limit // step / 3:
+                    xg.append(x)
+                    yg.append(y)
+                    zg.append(z)
+                space[ix][iy].append(param)
+    xg = np.array(xg)
+    yg = np.array(yg)
+    zg = np.array(zg)
+    return space, xg, yg, zg, l1_
+
+
+def model(m1, m2, a, limit, step):
+    lobe, xg, yg, zg, l1_ = lobe_for_model(m1, m2, float(a), limit, step)
+    # print()
+    c = 0
+
+    ''' рисуем модель полости по полученным данным'''
+
+
+    fig = plt.figure(figsize=(5, 5))
+    ax_3d = Axes3D(fig)
+    ax_3d.scatter(xg, yg, zg, color='turquoise', alpha=0.1)
+    xgg = []
+    ygg = []
+    zgg = []
+    for i in range(len(xg)):
+        if (-0.01 < xg[i] < 0.01) or (-0.21 < xg[i] < -0.19) or (-0.41 < xg[i] < -0.39) or (-0.81 < xg[i] < -0.79) or (0.21 > xg[i] >0.19) or (0.41 > xg[i] >0.39) or (0.81 >xg[i] >0.79):
+            xgg.append(xg[i])
+            ygg.append(yg[i])
+            zgg.append(zg[i])
+    for i in range(len(xg)):
+        if (-0.01 < yg[i] < 0.01) or (-0.21 < yg[i] < -0.19) or (-0.41 < yg[i] < -0.39) or (-0.81 < yg[i] < -0.79) or (0.21 > yg[i] >0.19) or (0.41 > yg[i] >0.39) or (0.81 >yg[i] >0.79):
+            xgg.append(xg[i])
+            ygg.append(yg[i])
+            zgg.append(zg[i])
+    ax_3d.scatter(xgg, ygg, zgg, color='navy')
+    ax_3d.scatter(np.array([0]), np.array([0]), np.array([0]), color='r', s=20)
+    ax_3d.scatter(np.array([a]), np.array([0]), np.array([0]), color='b', s=20)
+    ax_3d.scatter(np.array([l1_]), np.array([0]), np.array([0]), color='y', s=20)
+    ax_3d.set_xlabel('x')
+    ax_3d.set_ylabel('y')
+    ax_3d.set_zlabel('z')
+    ax_3d.set_xlim([-a, a])
+    ax_3d.set_ylim([-a, a])
+    ax_3d.set_zlim([-a, a])
+    plt.show()
+
+def volume_counter(lobe, l1, limit, step):
+    counter = 0
+
+    for x in range(int(limit / step / 3), int((l1 + limit) / step)):
+        for y in lobe[x]:
+            for el in y:
+                if el > 0:
+                    counter += 1
+    return counter / (limit / step) ** 3
+
+m1 = 25
+m2 = 1
 a = 1
+
+m1s = np.arange(1, 100, 20)
+m2s = np.arange(1, 100, 20)
+a_s = np.arange(1, 6, 1)
+ans = [[],[],[],[]]
+for m1_ in m1s:
+    for m2_ in m2s:
+        for a_ in a_s:
+            limit = a_
+            step = 0.02
+            lobe, xg, yg, zg, l1_ = lobe_(m1_, m2_, float(a_), limit, step)
+            volume = volume_counter(lobe, l1_, limit, step)
+            ans[0].append(m1_)
+            ans[1].append(m2_)
+            ans[2].append(a_)
+            ans[3].append(volume)
+
 
 n = m1 / m2
 
 limit = a
-step = 0.05
-lobe, xg, yg, zg, l1_ = lobe(m1, m2, float(a), limit, step)
-#print()
-c = 0
+step = 0.02
+lobe, xg, yg, zg, l1_ = lobe_(m1, m2, float(a), limit, step)
+volume = volume_counter(lobe, l1_, limit, step)
+print(volume)
+print(ans)
+model(m1, m2, a, limit, step)
 
-''' рисуем модель полости по полученным данным'''
-
-fig = plt.figure(figsize=(5, 5))
-ax_3d = Axes3D(fig)
-ax_3d.scatter(xg, yg, zg, color='g', s=5)
-ax_3d.scatter(np.array([0]), np.array([0]), np.array([0]), color='r', s=20)
-ax_3d.scatter(np.array([a]), np.array([0]), np.array([0]), color='b', s=20)
-ax_3d.scatter(np.array([l1_]), np.array([0]), np.array([0]), color='y', s=20)
-ax_3d.set_xlabel('x')
-ax_3d.set_ylabel('y')
-ax_3d.set_zlabel('z')
-ax_3d.set_xlim([-a, 2 * a])
-ax_3d.set_ylim([-a, a])
-ax_3d.set_zlim([-a, a])
-plt.show()
 
 '''
 for x in lobe:
